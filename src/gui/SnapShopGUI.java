@@ -1,0 +1,293 @@
+/*
+ * TCSS 305 Homework 3: SnapShop
+ * 
+ */
+
+package gui;
+
+import filters.EdgeDetectFilter;
+import filters.EdgeHighlightFilter;
+import filters.Filter;
+import filters.FlipHorizontalFilter;
+import filters.FlipVerticalFilter;
+import filters.GrayscaleFilter;
+import filters.SharpenFilter;
+import filters.SoftenFilter;
+import image.PixelImage;
+import java.awt.BorderLayout;
+import java.awt.Dimension;
+import java.awt.FlowLayout;
+import java.awt.Toolkit;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import javax.swing.ImageIcon;
+import javax.swing.JButton;
+import javax.swing.JFileChooser;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.SwingConstants;
+import javax.swing.filechooser.FileNameExtensionFilter;
+
+/**
+ * The GUI for SnapShop.
+ * 
+ * @author Marty Stepp
+ * @author Daniel M. Zimmerman
+ * @author Alan Fowler
+ * @author Charles Bryan
+ * @author Codi Chun
+ * @version Winter 2021
+ */
+public class SnapShopGUI extends JPanel {
+
+    /**  A generated serial version UID for object Serialization. */
+    private static final long serialVersionUID = -4860201906562574893L;
+
+    /** The window title. */
+    private static final String TITLE = "TCSS 305 - Assignment 3";
+    
+    /** A ToolKit. */
+    private static final Toolkit KIT = Toolkit.getDefaultToolkit();
+
+    /** The label in which we will display the image. */
+    private JLabel myImageLabel;
+
+    /** The open button. */
+    private JButton myOpenButton;
+
+    /** The save button. */
+    private JButton mySaveButton;
+
+    /** The close button. */
+    private JButton myCloseButton;
+
+    /** The list of filter buttons. */
+    private List<JButton> myFilterButtons;    
+
+    /** The image that shows on GUI. */
+    private PixelImage myImage;
+    
+    /** The image that the user wants to save. */
+    private PixelImage myEdiedImage;
+    
+    /** The file chooser. */
+    private final JFileChooser myOpenImage = new JFileChooser(System.getProperty("user.dir"));
+
+    /**
+     * Initializes the GUI.
+     */
+    public SnapShopGUI() {
+        super();
+        setLayout(new BorderLayout());
+        buildComponents();
+        layoutComponents();
+        addEvents();
+    }
+
+    /**
+     * Creates a button to activate the specified filter, on the specified
+     * panel.
+     * 
+     * @param theFilter The filter.
+     * @return the created button.
+     */
+    private JButton createButton(final Filter theFilter) {
+        final JButton button = new JButton(theFilter.getDescription());
+        button.setEnabled(false);
+        button.addActionListener(new ActionListener() {
+
+            @Override
+            public void actionPerformed(final ActionEvent theEvent) {
+                theFilter.filter(myImage);
+                repaint();
+                myEdiedImage = myImage;
+                
+            }
+            
+        });
+        return button;
+    }
+
+    /**
+     * Instantiate the graphical components (frame, image label, buttons).
+     */
+    private void buildComponents() {
+
+        myImageLabel = new JLabel();
+        
+        // works on frame; top center on panel
+        myImageLabel.setHorizontalAlignment(SwingConstants.CENTER);
+        myImageLabel.setVerticalAlignment(SwingConstants.CENTER);
+       
+        myOpenButton = new JButton("Open...");
+        mySaveButton = new JButton("Save As...");
+        mySaveButton.setEnabled(false);
+        myCloseButton = new JButton("Close Image");
+        myCloseButton.setEnabled(false);
+        
+        // create the filter buttons
+        myFilterButtons = new ArrayList<JButton>();
+        myFilterButtons.add(createButton(new EdgeDetectFilter()));
+        myFilterButtons.add(createButton(new EdgeHighlightFilter()));
+        myFilterButtons.add(createButton(new FlipHorizontalFilter()));
+        myFilterButtons.add(createButton(new FlipVerticalFilter()));
+        myFilterButtons.add(createButton(new GrayscaleFilter()));
+        myFilterButtons.add(createButton(new SharpenFilter()));
+        myFilterButtons.add(createButton(new SoftenFilter()));
+    }
+
+    /**
+     * Sets up the event listeners.
+     */
+    private void addEvents() {
+        myOpenButton.addActionListener(new OpenButtonListener());
+        mySaveButton.addActionListener(new SaveButtonListener());
+        myCloseButton.addActionListener(new CloseButtonListener());
+    }
+
+    /**
+     * Sets up the graphical components.
+     */
+    private void layoutComponents() {
+
+        // add the filter buttons to a panel
+        final JPanel northPanel = new JPanel(new FlowLayout());
+        for (final JButton button : myFilterButtons) {
+            northPanel.add(button);
+        }
+        add(northPanel, BorderLayout.NORTH);
+
+        // label added directly the Center
+        add(myImageLabel, BorderLayout.CENTER);
+        
+        // south panel to hold the file Open button
+        final JPanel south = new JPanel(new FlowLayout());
+        south.add(myOpenButton);
+        south.add(mySaveButton);
+        south.add(myCloseButton);
+        add(south, BorderLayout.SOUTH);
+    }
+    
+
+    /**
+     * Create the GUI and show it.  For thread safety,
+     * this method should be invoked from the
+     * event-dispatching thread.
+     */
+    public static void createAndShowGui() {
+        final SnapShopGUI mainPanel = 
+                        new SnapShopGUI();
+        
+        // A size for the JFrame.
+        //final Dimension frameSize = new Dimension(400, 400);
+        
+        // set properties of the frame
+        final JFrame window = new JFrame(TITLE);
+        window.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        window.setMinimumSize(new Dimension());
+        window.setContentPane(mainPanel);
+        window.pack();
+        window.setMinimumSize(window.getSize());
+        window.setLocation(
+            (int) (KIT.getScreenSize().getWidth() / 2 - window.getWidth() / 2),
+            (int) (KIT.getScreenSize().getHeight() / 2 - window.getHeight() / 2));
+        window.setVisible(true);
+        
+        //For now, ignore what is going on here. We will look at this
+        //pattern in future lectures AND assignments. 
+        mainPanel.myImageLabel.addPropertyChangeListener(theEvent -> {
+            if ("icon".equals(theEvent.getPropertyName())) {
+                window.setMinimumSize(new Dimension());
+                window.pack();
+                window.setMinimumSize(window.getSize());
+                window.setLocation(
+                    (int) (KIT.getScreenSize().getWidth() / 2 - window.getWidth() / 2),
+                    (int) (KIT.getScreenSize().getHeight() / 2 - window.getHeight() / 2));
+            }
+        });
+        
+    }
+    
+    /**
+     * The button listener for "Open" button.
+     * @author Codi Chun
+     * @version Winter 2021
+     */
+    private class OpenButtonListener implements ActionListener {
+        @Override
+        public void actionPerformed(final ActionEvent theEvent) {
+            final FileNameExtensionFilter filter = new FileNameExtensionFilter("JPEG file", 
+                                                                               "jpg", 
+                                                                               "jpeg", 
+                                                                               "gif", 
+                                                                               "png", 
+                                                                               "GIF");
+            myOpenImage.addChoosableFileFilter(filter);
+
+            final int selection = myOpenImage.showOpenDialog(null);
+            if (selection == JFileChooser.APPROVE_OPTION) {               
+                try {
+                    myImage = PixelImage.load(myOpenImage.getSelectedFile());                 
+                    myImageLabel.setIcon(new ImageIcon(myImage)); 
+                    
+                    final Iterator<JButton> iter = myFilterButtons.iterator();
+                    mySaveButton.setEnabled(true);
+                    myCloseButton.setEnabled(true);
+                    while (iter.hasNext()) {
+                        iter.next().setEnabled(true);
+                    }
+                    
+                } catch (final IOException e) {  
+                    JOptionPane.showMessageDialog(null, 
+                                                "The selected file did not contain an image!", 
+                                                "Error!", JOptionPane.ERROR_MESSAGE);
+                }
+            } 
+        }
+    }
+    
+    
+    /**
+     * The button listener for "Save" button.
+     * @author Codi Chun
+     * @version Winter 2021
+     */
+    private class SaveButtonListener implements ActionListener {
+        @Override
+        public void actionPerformed(final ActionEvent theEvent) {
+            final int result = myOpenImage.showSaveDialog(SnapShopGUI.this);
+            if (result == JFileChooser.APPROVE_OPTION) {
+                try {
+                    myEdiedImage.save(myOpenImage.getSelectedFile());
+                } catch (final IOException e) {
+                }
+            }
+        }
+    }
+    
+    /**
+     * The button listener for "close image" button.
+     * @author Codi Chun
+     * @version Winter 2021
+     */
+    private class CloseButtonListener implements ActionListener {
+        @Override
+        public void actionPerformed(final ActionEvent theEvent) {
+            myImageLabel.setIcon(null);
+            final Iterator<JButton> iter = myFilterButtons.iterator();
+            mySaveButton.setEnabled(false);
+            myCloseButton.setEnabled(false);
+            while (iter.hasNext()) {
+                iter.next().setEnabled(false);
+            }
+            
+        }
+    }  
+
+}
